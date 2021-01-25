@@ -17,6 +17,10 @@ void MessageQueue<T>::send(T &&msg)
 {
     // FP.4a : The method send should use the mechanisms std::lock_guard<std::mutex> 
     // as well as _condition.notify_one() to add a new message to the queue and afterwards send a notification.
+    std::lock_guard<std::mutex> lock(_mutex);
+
+    _queue.push_back(std::move(msg));
+    _condition.notify_one();
 }
 
 /* Implementation of class "TrafficLight" */
@@ -60,21 +64,26 @@ void TrafficLight::simulate()
 }
 
 // Switch the phase of the light (from green -> red and red-> green)
-void TrafficLight::togglePhase()
+TrafficLightPhase TrafficLight::togglePhase()
 {
+    TrafficLightPhase newPhase;
     std::lock_guard<std::mutex> lock(_mutex);
 
     if (_currentPhase == TrafficLightPhase::red)
     {
-        _currentPhase = TrafficLightPhase::green;
+        newPhase = TrafficLightPhase::green;
     }
     else
     {
-        _currentPhase = TrafficLightPhase::red;
+        newPhase = TrafficLightPhase::red;
     }
+
+    _currentPhase = newPhase;
 
     std::lock_guard<std::mutex> cout_lock(_mtx);
     std::cout << "Traffic Light #" << getID() << " is now " << getCurrentPhaseString();
+
+    return newPhase;
 }
 
 // virtual function which is executed in a thread
@@ -103,7 +112,7 @@ void TrafficLight::cycleThroughPhases()
         if (timeSinceLastPhaseChange >= waitTime)
         {
             // change light
-            togglePhase();
+            _phaseChangeNotification.send(std::move(togglePhase()));
 
             // pick new wait time
             waitTime = distribution(rand_generator);
