@@ -40,6 +40,7 @@ public:
 
     // getters / setters
     TrafficLightPhase getCurrentPhase();
+    std::string getCurrentPhaseString();
 
     // typical behaviour methods
     void waitForGreen();
@@ -48,6 +49,7 @@ public:
 private:
     // typical behaviour methods
     void cycleThroughPhases();
+    void togglePhase();
 
     TrafficLightPhase _currentPhase;
 
