@@ -45,7 +45,6 @@ public:
 
     // getters / setters
     TrafficLightPhase getCurrentPhase();
-    std::string getCurrentPhaseString();
 
     // typical behaviour methods
     void waitForGreen();
