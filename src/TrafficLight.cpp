@@ -78,7 +78,7 @@ std::string TrafficLight::getCurrentPhaseString()
 void TrafficLight::simulate()
 {
     // FP.2b : Finally, the private method „cycleThroughPhases“ should be started in a thread when the public method „simulate“ is called. To do this, use the thread queue in the base class.
-    threads.emplace_back(&TrafficLight::cycleThroughPhases, this);
+    threads.emplace_back(std::thread(&TrafficLight::cycleThroughPhases, this));
 }
 
 // Switch the phase of the light (from green -> red and red-> green)
@@ -98,9 +98,6 @@ TrafficLightPhase TrafficLight::togglePhase()
 
     _currentPhase = newPhase;
 
-    std::lock_guard<std::mutex> cout_lock(_mtx);
-    std::cout << "Traffic Light #" << getID() << " is now " << getCurrentPhaseString();
-
     return newPhase;
 }
 
@@ -116,9 +113,9 @@ void TrafficLight::cycleThroughPhases()
     auto lastPhaseChange = std::chrono::system_clock::now();
 
     // initialize random wait
-    std::default_random_engine rand_generator;
+    std::mt19937 generator(rand());
     std::uniform_int_distribution<int> distribution(4000, 6000); // generate random ms values between 4 and 6 seconds
-    int waitTime = distribution(rand_generator);
+    int waitTime = distribution(generator);
     
     while (true) {
         // allow other threads to use CPU
@@ -133,7 +130,7 @@ void TrafficLight::cycleThroughPhases()
             _phaseChangeNotification.send(std::move(togglePhase()));
 
             // pick new wait time
-            waitTime = distribution(rand_generator);
+            waitTime = distribution(generator);
 
             // reset stopwatch
             lastPhaseChange = std::chrono::system_clock::now();
